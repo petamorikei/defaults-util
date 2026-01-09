@@ -5,18 +5,18 @@ use crate::defaults::Snapshot;
 
 use super::types::{Change, DiffResult, DomainDiff};
 
-/// 2つのスナップショット間の差分を検出
+/// Detect diff between two snapshots
 pub fn detect_diff(before: &Snapshot, after: &Snapshot) -> DiffResult {
     let mut domain_diffs = Vec::new();
     let mut total_changes = 0;
 
-    // afterに存在するドメインをチェック
+    // Check domains that exist in after
     for (domain, after_settings) in &after.domains {
         let mut changes = Vec::new();
 
         match before.domains.get(domain) {
             Some(before_settings) => {
-                // 既存ドメインの差分検出
+                // Detect changes in existing domain
                 changes.extend(detect_domain_changes(
                     domain,
                     &before_settings.values,
@@ -24,7 +24,7 @@ pub fn detect_diff(before: &Snapshot, after: &Snapshot) -> DiffResult {
                 ));
             }
             None => {
-                // 新規ドメイン（全キーが追加）
+                // New domain (all keys are added)
                 for (key, value) in &after_settings.values {
                     changes.push(Change::Added {
                         domain: domain.clone(),
@@ -44,7 +44,7 @@ pub fn detect_diff(before: &Snapshot, after: &Snapshot) -> DiffResult {
         }
     }
 
-    // beforeにのみ存在するドメイン（削除されたドメイン）
+    // Domains that only exist in before (deleted domains)
     for (domain, before_settings) in &before.domains {
         if !after.domains.contains_key(domain) {
             let changes: Vec<Change> = before_settings
@@ -65,7 +65,7 @@ pub fn detect_diff(before: &Snapshot, after: &Snapshot) -> DiffResult {
         }
     }
 
-    // ドメイン名でソート
+    // Sort by domain name
     domain_diffs.sort_by(|a, b| a.domain.cmp(&b.domain));
 
     DiffResult {
@@ -74,7 +74,7 @@ pub fn detect_diff(before: &Snapshot, after: &Snapshot) -> DiffResult {
     }
 }
 
-/// 同一ドメイン内のキー変更を検出
+/// Detect key changes within a domain
 fn detect_domain_changes(
     domain: &str,
     before: &HashMap<String, Value>,
@@ -82,7 +82,7 @@ fn detect_domain_changes(
 ) -> Vec<Change> {
     let mut changes = Vec::new();
 
-    // afterに存在するキーをチェック
+    // Check keys that exist in after
     for (key, after_value) in after {
         match before.get(key) {
             Some(before_value) => {
@@ -105,7 +105,7 @@ fn detect_domain_changes(
         }
     }
 
-    // beforeにのみ存在するキー（削除）
+    // Keys that only exist in before (deleted)
     for (key, before_value) in before {
         if !after.contains_key(key) {
             changes.push(Change::Removed {
@@ -116,13 +116,13 @@ fn detect_domain_changes(
         }
     }
 
-    // キー名でソート
+    // Sort by key name
     changes.sort_by(|a, b| a.key().cmp(b.key()));
 
     changes
 }
 
-/// plist::Valueの比較（再帰的）
+/// Compare plist::Value recursively
 fn values_equal(a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Boolean(a), Value::Boolean(b)) => a == b,

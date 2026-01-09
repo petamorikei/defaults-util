@@ -18,17 +18,17 @@ use app::App;
 use ui::{handle_input, render};
 
 fn main() -> anyhow::Result<()> {
-    // ターミナルの初期化
+    // Initialize terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // アプリケーション実行
+    // Run application
     let result = run_app(&mut terminal);
 
-    // ターミナルの復元
+    // Restore terminal
     disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
@@ -48,16 +48,16 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Res
     let mut app = App::new();
 
     loop {
-        // 画面を描画
+        // Draw screen
         terminal.draw(|f| render(f, &app))?;
 
-        // Loading状態の場合は、画面描画後にキャプチャを実行
+        // If loading, execute capture after screen draw
         if app.is_loading() {
             app.execute_capture();
             continue;
         }
 
-        // ユーザー入力を処理
+        // Handle user input
         if handle_input(&mut app)? {
             break;
         }

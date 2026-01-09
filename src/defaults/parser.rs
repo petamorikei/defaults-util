@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use super::types::DomainSettings;
 use crate::error::Result;
 
-/// plistデータをパースしてDomainSettingsに変換
+/// Parse plist data into DomainSettings
 pub fn parse_domain_plist(_domain: &str, data: &[u8]) -> Result<DomainSettings> {
     let value: Value = plist::from_bytes(data)?;
 

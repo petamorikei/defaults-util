@@ -1,23 +1,23 @@
 # defaults-util
 
-macOSの`defaults`コマンドによる設定変更を検出し、再現可能なコマンドを生成するTUIアプリケーション。
+A TUI application that detects macOS `defaults` setting changes and generates reproducible commands.
 
-## 概要
+## Overview
 
-System Settingsで設定を変更した後、その変更を`defaults write`コマンドとして取得できます。dotfilesへの組み込みや設定の再現に便利です。
+After making changes in System Settings, you can retrieve those changes as `defaults write` commands. Useful for dotfiles integration and reproducing settings.
 
-## インストール
+## Installation
 
 ```bash
 cargo build --release
 ```
 
-## 制限事項
+## Limitations
 
-- macOS専用
-- 一部のドメインは読み取り権限がない場合があります（スキップされます）
-- クリップボードへのコピーは`pbcopy`を使用
+- macOS only
+- Some domains may not be readable (they will be skipped)
+- Clipboard copy uses `pbcopy`
 
-## ライセンス
+## License
 
 MIT

@@ -1,21 +1,21 @@
 use plist::Value as PlistValue;
 
-/// 単一の変更を表す
+/// Represents a single change
 #[derive(Debug, Clone)]
 pub enum Change {
-    /// キーが追加された
+    /// Key was added
     Added {
         domain: String,
         key: String,
         value: PlistValue,
     },
-    /// キーが削除された
+    /// Key was removed
     Removed {
         domain: String,
         key: String,
         old_value: PlistValue,
     },
-    /// 値が変更された
+    /// Value was modified
     Modified {
         domain: String,
         key: String,
@@ -34,14 +34,14 @@ impl Change {
     }
 }
 
-/// ドメイン単位の差分
+/// Diff for a single domain
 #[derive(Debug, Clone)]
 pub struct DomainDiff {
     pub domain: String,
     pub changes: Vec<Change>,
 }
 
-/// 全体の差分結果
+/// Overall diff result
 #[derive(Debug, Clone)]
 pub struct DiffResult {
     pub domain_diffs: Vec<DomainDiff>,

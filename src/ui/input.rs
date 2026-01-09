@@ -11,7 +11,7 @@ pub fn handle_input(app: &mut App) -> io::Result<bool> {
         && let Event::Key(key) = event::read()?
     {
         match key.code {
-            // 終了
+            // Quit
             KeyCode::Char('q') => {
                 app.should_quit = true;
             }
@@ -19,17 +19,17 @@ pub fn handle_input(app: &mut App) -> io::Result<bool> {
                 app.should_quit = true;
             }
 
-            // リセット
+            // Reset
             KeyCode::Char('r') => {
                 app.reset();
             }
 
-            // Enter: スナップショット取得
+            // Enter: Capture snapshot
             KeyCode::Enter => {
                 handle_enter(app);
             }
 
-            // 移動
+            // Navigation
             KeyCode::Up | KeyCode::Char('k') => {
                 app.move_up();
             }
@@ -37,12 +37,12 @@ pub fn handle_input(app: &mut App) -> io::Result<bool> {
                 app.move_down();
             }
 
-            // フォーカス切り替え
+            // Toggle focus
             KeyCode::Tab => {
                 app.toggle_focus();
             }
 
-            // コピー（Changesペインにフォーカス時のみ）
+            // Copy (only when focused on Changes pane)
             KeyCode::Char('y') => {
                 handle_copy(app);
             }
@@ -69,14 +69,14 @@ fn handle_enter(app: &mut App) {
 }
 
 fn handle_copy(app: &mut App) {
-    // DiffViewでChangesペインにフォーカスしている時のみコピー可能
+    // Copy only when focused on Changes pane in DiffView
     if app.screen == Screen::DiffView
         && app.focus == Focus::Diff
         && let Some(change) = app.selected_change()
     {
         let cmd = generate_command(change);
 
-        // macOSのpbcopyを使用してクリップボードにコピー
+        // Use macOS pbcopy to copy to clipboard
         if let Ok(mut child) = Command::new("pbcopy")
             .stdin(std::process::Stdio::piped())
             .spawn()

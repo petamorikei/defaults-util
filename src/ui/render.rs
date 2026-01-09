@@ -56,7 +56,7 @@ fn render_initial_screen(frame: &mut Frame, app: &App) {
     );
     frame.render_widget(instructions, chunks[1]);
 
-    // ステータスバー
+    // Status bar
     let status_text = if let Some(status) = app.get_status() {
         status.text.as_str()
     } else {
@@ -80,7 +80,7 @@ fn render_initial_screen(frame: &mut Frame, app: &App) {
 fn render_loading_screen(frame: &mut Frame, app: &App) {
     let area = frame.area();
 
-    // 中央にローディングメッセージを表示
+    // Display loading message in center
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -183,7 +183,7 @@ fn render_waiting_screen(frame: &mut Frame, app: &App) {
 }
 
 fn render_diff_screen(frame: &mut Frame, app: &App) {
-    // Changesにフォーカスしていて選択中の変更がある場合、コマンドプレビューを表示
+    // Show command preview when focusing on Changes pane with a selection
     let show_preview = app.focus == Focus::Diff && app.selected_change().is_some();
 
     let chunks = Layout::default()
@@ -191,21 +191,21 @@ fn render_diff_screen(frame: &mut Frame, app: &App) {
         .margin(1)
         .constraints(if show_preview {
             vec![
-                Constraint::Length(3), // ヘッダー
-                Constraint::Min(8),    // メインコンテンツ
-                Constraint::Length(5), // コマンドプレビュー
-                Constraint::Length(3), // フッター
+                Constraint::Length(3), // Header
+                Constraint::Min(8),    // Main content
+                Constraint::Length(5), // Command preview
+                Constraint::Length(3), // Footer
             ]
         } else {
             vec![
-                Constraint::Length(3), // ヘッダー
-                Constraint::Min(10),   // メインコンテンツ
-                Constraint::Length(3), // フッター
+                Constraint::Length(3), // Header
+                Constraint::Min(10),   // Main content
+                Constraint::Length(3), // Footer
             ]
         })
         .split(frame.area());
 
-    // ヘッダー（ステータスメッセージがあれば表示）
+    // Header (show status message if available)
     let header_text = if let Some(status) = app.get_status() {
         status.text.clone()
     } else {
@@ -236,7 +236,7 @@ fn render_diff_screen(frame: &mut Frame, app: &App) {
         .block(Block::default().borders(Borders::ALL).title(" Diff View "));
     frame.render_widget(header, chunks[0]);
 
-    // メインコンテンツ
+    // Main content
     let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(35), Constraint::Percentage(65)])
@@ -245,7 +245,7 @@ fn render_diff_screen(frame: &mut Frame, app: &App) {
     render_domain_list(frame, app, main_chunks[0]);
     render_diff_details(frame, app, main_chunks[1]);
 
-    // コマンドプレビュー（Changesにフォーカス時のみ）
+    // Command preview (only when focused on Changes)
     if show_preview && let Some(change) = app.selected_change() {
         let cmd = generate_command(change);
         let preview = Paragraph::new(vec![
@@ -265,7 +265,7 @@ fn render_diff_screen(frame: &mut Frame, app: &App) {
         frame.render_widget(preview, chunks[2]);
     }
 
-    // フッター
+    // Footer
     let footer_idx = if show_preview { 3 } else { 2 };
     let footer_text = if app.focus == Focus::Diff {
         "[j/k] Move  [Tab] Switch focus  [y] Copy command  [r] Reset  [q] Quit"
@@ -368,7 +368,7 @@ fn render_diff_details(frame: &mut Frame, app: &App, area: Rect) {
         Style::default()
     };
 
-    // Changesペインにフォーカス時はタイトルにコピーヒントを表示
+    // Show copy hint in title when focused on Changes pane
     let title = if app.focus == Focus::Diff {
         " Changes (y to copy) "
     } else {

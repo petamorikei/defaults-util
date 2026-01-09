@@ -4,7 +4,7 @@ use super::parser::parse_domain_plist;
 use super::types::Snapshot;
 use crate::error::{AppError, Result};
 
-/// 全ドメインの一覧を取得
+/// Get list of all domains
 pub fn list_domains() -> Result<Vec<String>> {
     let output = Command::new("defaults").arg("domains").output()?;
 
@@ -24,7 +24,7 @@ pub fn list_domains() -> Result<Vec<String>> {
     Ok(domains)
 }
 
-/// 特定ドメインの設定をXML plist形式で取得
+/// Export domain settings as XML plist
 pub fn export_domain(domain: &str) -> Result<Vec<u8>> {
     let output = Command::new("defaults")
         .args(["export", domain, "-"])
@@ -41,7 +41,7 @@ pub fn export_domain(domain: &str) -> Result<Vec<u8>> {
     Ok(output.stdout)
 }
 
-/// 全ドメインの設定を取得してスナップショットを作成
+/// Capture snapshot of all domain settings
 pub fn capture_snapshot() -> Result<Snapshot> {
     let domains = list_domains()?;
     let mut snapshot = Snapshot::new();
@@ -54,7 +54,7 @@ pub fn capture_snapshot() -> Result<Snapshot> {
                 }
             }
             Err(_) => {
-                // 読み取りできないドメインはスキップ
+                // Skip domains that cannot be read
                 continue;
             }
         }

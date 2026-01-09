@@ -3,31 +3,31 @@ use std::time::Instant;
 use crate::defaults::{Snapshot, capture_snapshot};
 use crate::diff::{Change, DiffResult, detect_diff};
 
-/// アプリケーションの画面状態
+/// Application screen state
 #[derive(Debug, Clone, PartialEq)]
 pub enum Screen {
-    /// 初期画面（スナップショット取得待ち）
+    /// Initial screen (waiting for first snapshot)
     Initial,
-    /// スナップショット取得中（1回目）
+    /// Capturing first snapshot
     LoadingFirst,
-    /// スナップショット取得中（2回目）
+    /// Capturing second snapshot
     LoadingSecond,
-    /// スナップショット1取得済み（変更待ち）
+    /// First snapshot captured (waiting for changes)
     WaitingForChanges,
-    /// 差分表示画面
+    /// Diff view screen
     DiffView,
-    /// エラー表示
+    /// Error display
     Error(String),
 }
 
-/// 選択されているUI要素
+/// Currently focused UI element
 #[derive(Debug, Clone, PartialEq)]
 pub enum Focus {
     Domain,
     Diff,
 }
 
-/// ステータスメッセージの種類
+/// Status message type
 #[derive(Debug, Clone, PartialEq)]
 pub enum StatusKind {
     Info,
@@ -35,7 +35,7 @@ pub enum StatusKind {
     Warning,
 }
 
-/// ステータスメッセージ
+/// Status message
 #[derive(Debug, Clone)]
 pub struct StatusMessage {
     pub text: String,
@@ -68,13 +68,13 @@ impl StatusMessage {
         }
     }
 
-    /// メッセージが有効かどうか（3秒以内）
+    /// Check if message is still valid (within 3 seconds)
     pub fn is_valid(&self) -> bool {
         self.created_at.elapsed().as_secs() < 3
     }
 }
 
-/// アプリケーション全体の状態
+/// Application state
 pub struct App {
     pub screen: Screen,
     pub focus: Focus,
@@ -102,17 +102,17 @@ impl App {
         }
     }
 
-    /// ステータスメッセージを設定
+    /// Set status message
     pub fn set_status(&mut self, status: StatusMessage) {
         self.status = Some(status);
     }
 
-    /// 有効なステータスメッセージを取得
+    /// Get valid status message
     pub fn get_status(&self) -> Option<&StatusMessage> {
         self.status.as_ref().filter(|s| s.is_valid())
     }
 
-    /// 最初の状態にリセット
+    /// Reset to initial state
     pub fn reset(&mut self) {
         self.screen = Screen::Initial;
         self.focus = Focus::Domain;
@@ -124,7 +124,7 @@ impl App {
         self.status = Some(StatusMessage::info("Reset complete"));
     }
 
-    /// 1回目のスナップショット取得を開始（Loading画面に遷移）
+    /// Start first snapshot capture (transition to loading screen)
     pub fn start_first_snapshot(&mut self) {
         self.screen = Screen::LoadingFirst;
         self.status = Some(StatusMessage::info(
@@ -132,7 +132,7 @@ impl App {
         ));
     }
 
-    /// 2回目のスナップショット取得を開始（Loading画面に遷移）
+    /// Start second snapshot capture (transition to loading screen)
     pub fn start_second_snapshot(&mut self) {
         self.screen = Screen::LoadingSecond;
         self.status = Some(StatusMessage::info(
@@ -140,7 +140,7 @@ impl App {
         ));
     }
 
-    /// 実際にスナップショットを取得（メインループから呼ばれる）
+    /// Execute snapshot capture (called from main loop)
     pub fn execute_capture(&mut self) {
         match self.screen {
             Screen::LoadingFirst => self.capture_first_snapshot(),
@@ -149,7 +149,7 @@ impl App {
         }
     }
 
-    /// 最初のスナップショットを取得
+    /// Capture first snapshot
     fn capture_first_snapshot(&mut self) {
         match capture_snapshot() {
             Ok(snapshot) => {
@@ -167,7 +167,7 @@ impl App {
         }
     }
 
-    /// 2番目のスナップショットを取得して差分を検出
+    /// Capture second snapshot and detect diff
     fn capture_second_snapshot(&mut self) {
         match capture_snapshot() {
             Ok(snapshot) => {
@@ -180,7 +180,7 @@ impl App {
         }
     }
 
-    /// 差分を検出
+    /// Detect changes between snapshots
     fn detect_changes(&mut self) {
         if let (Some(before), Some(after)) = (&self.snapshot_before, &self.snapshot_after) {
             let diff = detect_diff(before, after);
@@ -201,7 +201,7 @@ impl App {
         }
     }
 
-    /// 現在選択中の差分を取得
+    /// Get currently selected change
     pub fn selected_change(&self) -> Option<&Change> {
         self.diff_result
             .as_ref()
@@ -209,7 +209,7 @@ impl App {
             .and_then(|domain_diff| domain_diff.changes.get(self.selected_diff_index))
     }
 
-    /// 上に移動
+    /// Move selection up
     pub fn move_up(&mut self) {
         if self.screen == Screen::DiffView {
             match self.focus {
@@ -228,7 +228,7 @@ impl App {
         }
     }
 
-    /// 下に移動
+    /// Move selection down
     pub fn move_down(&mut self) {
         if self.screen == Screen::DiffView
             && let Some(diff) = &self.diff_result
@@ -251,7 +251,7 @@ impl App {
         }
     }
 
-    /// フォーカス切り替え
+    /// Toggle focus between panes
     pub fn toggle_focus(&mut self) {
         if self.screen == Screen::DiffView {
             self.focus = match self.focus {
@@ -261,7 +261,7 @@ impl App {
         }
     }
 
-    /// Loading状態かどうか
+    /// Check if currently in loading state
     pub fn is_loading(&self) -> bool {
         matches!(self.screen, Screen::LoadingFirst | Screen::LoadingSecond)
     }

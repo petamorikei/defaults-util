@@ -1,13 +1,13 @@
 use plist::Value as PlistValue;
 use std::collections::HashMap;
 
-/// 単一ドメインの設定データ
+/// Settings data for a single domain
 #[derive(Debug, Clone)]
 pub struct DomainSettings {
     pub values: HashMap<String, PlistValue>,
 }
 
-/// 全ドメインのスナップショット
+/// Snapshot of all domains
 #[derive(Debug, Clone)]
 pub struct Snapshot {
     pub domains: HashMap<String, DomainSettings>,

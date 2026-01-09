@@ -2,7 +2,7 @@ use plist::Value;
 
 use crate::diff::Change;
 
-/// 変更からdefaultsコマンドを生成
+/// Generate defaults command from a change
 pub fn generate_command(change: &Change) -> String {
     match change {
         Change::Added { domain, key, value } => generate_write_command(domain, key, value),
@@ -18,7 +18,7 @@ pub fn generate_command(change: &Change) -> String {
     }
 }
 
-/// defaults writeコマンドを生成
+/// Generate defaults write command
 fn generate_write_command(domain: &str, key: &str, value: &Value) -> String {
     match value {
         Value::Boolean(b) => {
@@ -60,7 +60,7 @@ fn generate_write_command(domain: &str, key: &str, value: &Value) -> String {
             )
         }
         Value::Dictionary(_) => {
-            // ネストされた辞書はNeXTSTEP plist形式で書き込む
+            // Write nested dictionary as NeXTSTEP plist format
             let plist_str = format_as_plist(value);
             format!("defaults write \"{}\" \"{}\" '{}'", domain, key, plist_str)
         }
@@ -73,14 +73,14 @@ fn generate_write_command(domain: &str, key: &str, value: &Value) -> String {
             )
         }
         Value::Uid(u) => {
-            // UIDは整数として扱う
+            // Treat UID as integer
             format!("defaults write \"{}\" \"{}\" -int {}", domain, key, u.get())
         }
         _ => format!("# Unsupported type for key: {}", key),
     }
 }
 
-/// 配列要素をコマンド引数形式に変換
+/// Format array elements as command arguments
 fn format_array_elements(arr: &[Value]) -> String {
     arr.iter()
         .filter_map(|v| match v {
@@ -88,13 +88,13 @@ fn format_array_elements(arr: &[Value]) -> String {
             Value::Integer(i) => Some(i.as_signed().unwrap_or(0).to_string()),
             Value::Real(f) => Some(f.to_string()),
             Value::Boolean(b) => Some(if *b { "1" } else { "0" }.to_string()),
-            _ => None, // 複雑な型はスキップ
+            _ => None, // Skip complex types
         })
         .collect::<Vec<_>>()
         .join(" ")
 }
 
-/// NeXTSTEP plist形式に変換
+/// Format as NeXTSTEP plist
 fn format_as_plist(value: &Value) -> String {
     match value {
         Value::Boolean(b) => { if *b { "1" } else { "0" } }.to_string(),
@@ -116,7 +116,7 @@ fn format_as_plist(value: &Value) -> String {
     }
 }
 
-/// 文字列のエスケープ処理
+/// Escape string for shell
 fn escape_string(s: &str) -> String {
     s.replace('\\', "\\\\")
         .replace('"', "\\\"")
