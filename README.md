@@ -8,6 +8,14 @@ After making changes in System Settings, you can retrieve those changes as `defa
 
 ## Installation
 
+From crates.io:
+
+```bash
+cargo install defaults-util
+```
+
+From source:
+
 ```bash
 cargo build --release
 ```
