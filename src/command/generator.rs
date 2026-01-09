@@ -59,10 +59,16 @@ fn generate_write_command(domain: &str, key: &str, value: &Value) -> String {
                 domain, key, elements
             )
         }
-        Value::Dictionary(_) => {
-            // Write nested dictionary as NeXTSTEP plist format
-            let plist_str = format_as_plist(value);
-            format!("defaults write \"{}\" \"{}\" '{}'", domain, key, plist_str)
+        Value::Dictionary(dict) => {
+            if has_nested_structure(dict) {
+                format!(
+                    "# Nested dictionary not supported by defaults command: {} {}",
+                    domain, key
+                )
+            } else {
+                let pairs = format_dict_pairs(dict);
+                format!("defaults write \"{}\" \"{}\" -dict {}", domain, key, pairs)
+            }
         }
         Value::Date(d) => {
             format!(
@@ -94,25 +100,44 @@ fn format_array_elements(arr: &[Value]) -> String {
         .join(" ")
 }
 
-/// Format as NeXTSTEP plist
-fn format_as_plist(value: &Value) -> String {
+/// Check if dictionary contains nested structures
+fn has_nested_structure(dict: &plist::Dictionary) -> bool {
+    dict.values()
+        .any(|v| matches!(v, Value::Dictionary(_) | Value::Array(_)))
+}
+
+/// Format dictionary as -dict arguments
+fn format_dict_pairs(dict: &plist::Dictionary) -> String {
+    dict.iter()
+        .filter_map(|(k, v)| format_dict_value(k, v))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Format a single dictionary key-value pair
+fn format_dict_value(key: &str, value: &Value) -> Option<String> {
     match value {
-        Value::Boolean(b) => { if *b { "1" } else { "0" } }.to_string(),
-        Value::Integer(i) => i.as_signed().unwrap_or(0).to_string(),
-        Value::Real(f) => f.to_string(),
-        Value::String(s) => format!("\"{}\"", escape_string(s)),
-        Value::Array(arr) => {
-            let elements: Vec<String> = arr.iter().map(format_as_plist).collect();
-            format!("({})", elements.join(", "))
+        Value::Boolean(b) => Some(format!(
+            "\"{}\" -bool {}",
+            escape_string(key),
+            if *b { "true" } else { "false" }
+        )),
+        Value::Integer(i) => Some(format!(
+            "\"{}\" -int {}",
+            escape_string(key),
+            i.as_signed().unwrap_or(0)
+        )),
+        Value::Real(f) => Some(format!("\"{}\" -float {}", escape_string(key), f)),
+        Value::String(s) => Some(format!(
+            "\"{}\" -string \"{}\"",
+            escape_string(key),
+            escape_string(s)
+        )),
+        Value::Data(d) => {
+            let hex: String = d.iter().map(|b| format!("{:02x}", b)).collect();
+            Some(format!("\"{}\" -data {}", escape_string(key), hex))
         }
-        Value::Dictionary(dict) => {
-            let pairs: Vec<String> = dict
-                .iter()
-                .map(|(k, v)| format!("\"{}\" = {}", k, format_as_plist(v)))
-                .collect();
-            format!("{{{}}}", pairs.join("; "))
-        }
-        _ => String::new(),
+        _ => None,
     }
 }
 
