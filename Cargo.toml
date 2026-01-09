@@ -1,6 +1,6 @@
 [package]
 name = "defaults-util"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "A TUI application that detects macOS defaults setting changes and generates reproducible commands"
 license = "MIT"
