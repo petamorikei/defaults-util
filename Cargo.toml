@@ -1,7 +1,12 @@
 [package]
 name = "defaults-util"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
+description = "A TUI application that detects macOS defaults setting changes and generates reproducible commands"
+license = "MIT"
+repository = "https://github.com/petamorikei/defaults-util"
+keywords = ["macos", "defaults", "tui", "settings"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 ratatui = "0.29"
