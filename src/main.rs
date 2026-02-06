@@ -2,7 +2,6 @@ mod app;
 mod command;
 mod defaults;
 mod diff;
-mod error;
 mod ui;
 
 use std::io;
@@ -24,6 +23,14 @@ fn main() -> anyhow::Result<()> {
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
+
+    // Set panic hook to restore terminal on panic
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        let _ = crossterm::terminal::disable_raw_mode();
+        let _ = crossterm::execute!(std::io::stderr(), crossterm::terminal::LeaveAlternateScreen);
+        original_hook(panic_info);
+    }));
 
     // Run application
     let result = run_app(&mut terminal);
@@ -49,7 +56,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Res
 
     loop {
         // Draw screen
-        terminal.draw(|f| render(f, &app))?;
+        terminal.draw(|f| render(f, &mut app))?;
 
         // If loading, execute capture after screen draw
         if app.is_loading() {

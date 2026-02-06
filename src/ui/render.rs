@@ -10,17 +10,17 @@ use crate::app::{App, Focus, Screen, StatusKind};
 use crate::command::generator::generate_command;
 use crate::diff::Change;
 
-pub fn render(frame: &mut Frame, app: &App) {
-    match &app.screen {
+pub fn render(frame: &mut Frame, app: &mut App) {
+    match app.screen.clone() {
         Screen::Initial => render_initial_screen(frame, app),
         Screen::LoadingFirst | Screen::LoadingSecond => render_loading_screen(frame, app),
         Screen::WaitingForChanges => render_waiting_screen(frame, app),
         Screen::DiffView => render_diff_screen(frame, app),
-        Screen::Error(msg) => render_error_screen(frame, msg),
+        Screen::Error(msg) => render_error_screen(frame, &msg),
     }
 }
 
-fn render_initial_screen(frame: &mut Frame, app: &App) {
+fn render_initial_screen(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -77,7 +77,7 @@ fn render_initial_screen(frame: &mut Frame, app: &App) {
     frame.render_widget(status, chunks[2]);
 }
 
-fn render_loading_screen(frame: &mut Frame, app: &App) {
+fn render_loading_screen(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
 
     // Display loading message in center
@@ -126,7 +126,7 @@ fn render_loading_screen(frame: &mut Frame, app: &App) {
     frame.render_widget(loading, center[1]);
 }
 
-fn render_waiting_screen(frame: &mut Frame, app: &App) {
+fn render_waiting_screen(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -182,7 +182,7 @@ fn render_waiting_screen(frame: &mut Frame, app: &App) {
     frame.render_widget(status, chunks[2]);
 }
 
-fn render_diff_screen(frame: &mut Frame, app: &App) {
+fn render_diff_screen(frame: &mut Frame, app: &mut App) {
     // Show command preview when focusing on Changes pane with a selection
     let show_preview = app.focus == Focus::Diff && app.selected_change().is_some();
 
@@ -278,34 +278,19 @@ fn render_diff_screen(frame: &mut Frame, app: &App) {
     frame.render_widget(footer, chunks[footer_idx]);
 }
 
-fn render_domain_list(frame: &mut Frame, app: &App, area: Rect) {
+fn render_domain_list(frame: &mut Frame, app: &mut App, area: Rect) {
     let items: Vec<ListItem> = app
         .diff_result
         .as_ref()
         .map(|diff| {
             diff.domain_diffs
                 .iter()
-                .enumerate()
-                .map(|(i, domain_diff)| {
-                    let style = if i == app.selected_domain_index && app.focus == Focus::Domain {
-                        Style::default()
-                            .fg(Color::Black)
-                            .bg(Color::Cyan)
-                            .add_modifier(Modifier::BOLD)
-                    } else if i == app.selected_domain_index {
-                        Style::default()
-                            .fg(Color::Cyan)
-                            .add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default()
-                    };
-
+                .map(|domain_diff| {
                     ListItem::new(format!(
                         "{} ({})",
                         domain_diff.domain,
                         domain_diff.changes.len()
                     ))
-                    .style(style)
                 })
                 .collect()
         })
@@ -317,16 +302,30 @@ fn render_domain_list(frame: &mut Frame, app: &App, area: Rect) {
         Style::default()
     };
 
-    let list = List::new(items).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(border_style)
-            .title(" Domains "),
-    );
-    frame.render_widget(list, area);
+    let highlight_style = if app.focus == Focus::Domain {
+        Style::default()
+            .fg(Color::Black)
+            .bg(Color::Cyan)
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD)
+    };
+
+    let list = List::new(items)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(border_style)
+                .title(" Domains "),
+        )
+        .highlight_style(highlight_style)
+        .highlight_symbol(">> ");
+    frame.render_stateful_widget(list, area, &mut app.domain_list_state);
 }
 
-fn render_diff_details(frame: &mut Frame, app: &App, area: Rect) {
+fn render_diff_details(frame: &mut Frame, app: &mut App, area: Rect) {
     let items: Vec<ListItem> = app
         .diff_result
         .as_ref()
@@ -335,27 +334,20 @@ fn render_diff_details(frame: &mut Frame, app: &App, area: Rect) {
             domain_diff
                 .changes
                 .iter()
-                .enumerate()
-                .map(|(i, change)| {
+                .map(|change| {
                     let (prefix, color) = match change {
                         Change::Added { .. } => ("+", Color::Green),
                         Change::Removed { .. } => ("-", Color::Red),
                         Change::Modified { .. } => ("~", Color::Yellow),
                     };
 
-                    let style = if i == app.selected_diff_index && app.focus == Focus::Diff {
-                        Style::default()
-                            .fg(Color::Black)
-                            .bg(color)
-                            .add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default().fg(color)
-                    };
-
                     let text = format_change(change);
                     ListItem::new(Line::from(vec![
-                        Span::styled(format!("{} ", prefix), style),
-                        Span::styled(text, style),
+                        Span::styled(
+                            format!("{} ", prefix),
+                            Style::default().fg(color),
+                        ),
+                        Span::styled(text, Style::default().fg(color)),
                     ]))
                 })
                 .collect()
@@ -375,13 +367,25 @@ fn render_diff_details(frame: &mut Frame, app: &App, area: Rect) {
         " Changes "
     };
 
-    let list = List::new(items).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(border_style)
-            .title(title),
-    );
-    frame.render_widget(list, area);
+    let highlight_style = if app.focus == Focus::Diff {
+        Style::default()
+            .fg(Color::Black)
+            .bg(Color::White)
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().add_modifier(Modifier::BOLD)
+    };
+
+    let list = List::new(items)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(border_style)
+                .title(title),
+        )
+        .highlight_style(highlight_style)
+        .highlight_symbol(">> ");
+    frame.render_stateful_widget(list, area, &mut app.diff_list_state);
 }
 
 fn format_change(change: &Change) -> String {
@@ -414,8 +418,8 @@ fn format_value(value: &plist::Value) -> String {
         plist::Value::Integer(i) => format!("{}", i.as_signed().unwrap_or(0)),
         plist::Value::Real(f) => format!("{:.2}", f),
         plist::Value::String(s) => {
-            if s.len() > 30 {
-                format!("\"{}...\"", &s[..27])
+            if s.chars().count() > 30 {
+                format!("\"{}...\"", s.chars().take(27).collect::<String>())
             } else {
                 format!("\"{}\"", s)
             }
