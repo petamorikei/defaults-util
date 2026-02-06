@@ -2,7 +2,7 @@ use plist::Value;
 use std::collections::HashMap;
 
 use super::types::DomainSettings;
-use crate::error::Result;
+use anyhow::Result;
 
 /// Parse plist data into DomainSettings
 pub fn parse_domain_plist(_domain: &str, data: &[u8]) -> Result<DomainSettings> {

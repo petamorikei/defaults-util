@@ -1,20 +1,41 @@
 use std::process::Command;
+use std::time::{Duration, Instant};
 
 use super::parser::parse_domain_plist;
 use super::types::Snapshot;
-use crate::error::{AppError, Result};
+use anyhow::{Result, bail};
+
+/// Run a command with a timeout, killing the child process if it exceeds the limit.
+fn run_with_timeout(cmd: &mut Command, timeout: Duration) -> Result<std::process::Output> {
+    let mut child = cmd.spawn()?;
+    let start = Instant::now();
+    loop {
+        match child.try_wait()? {
+            Some(_) => return Ok(child.wait_with_output()?),
+            None if start.elapsed() > timeout => {
+                let _ = child.kill();
+                bail!("Command timed out after {:?}", timeout);
+            }
+            None => std::thread::sleep(Duration::from_millis(50)),
+        }
+    }
+}
 
 /// Get list of all domains
 pub fn list_domains() -> Result<Vec<String>> {
-    let output = Command::new("defaults").arg("domains").output()?;
+    let output = run_with_timeout(
+        Command::new("defaults").arg("domains"),
+        Duration::from_secs(10),
+    )?;
 
     if !output.status.success() {
-        return Err(AppError::DefaultsCommand(
-            String::from_utf8_lossy(&output.stderr).to_string(),
-        ));
+        bail!(
+            "Failed to execute defaults command: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
-    let domains_str = String::from_utf8(output.stdout)?;
+    let domains_str = String::from_utf8_lossy(&output.stdout).into_owned();
     let domains: Vec<String> = domains_str
         .split(',')
         .map(|s| s.trim().to_string())
@@ -26,16 +47,17 @@ pub fn list_domains() -> Result<Vec<String>> {
 
 /// Export domain settings as XML plist
 pub fn export_domain(domain: &str) -> Result<Vec<u8>> {
-    let output = Command::new("defaults")
-        .args(["export", domain, "-"])
-        .output()?;
+    let output = run_with_timeout(
+        Command::new("defaults").args(["export", domain, "-"]),
+        Duration::from_secs(5),
+    )?;
 
     if !output.status.success() {
-        return Err(AppError::DefaultsCommand(format!(
+        bail!(
             "Failed to export domain '{}': {}",
             domain,
             String::from_utf8_lossy(&output.stderr)
-        )));
+        );
     }
 
     Ok(output.stdout)
