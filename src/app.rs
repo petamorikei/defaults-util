@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use ratatui::widgets::ListState;
+
 use crate::defaults::{Snapshot, capture_snapshot};
 use crate::diff::{Change, DiffResult, detect_diff};
 
@@ -85,6 +87,8 @@ pub struct App {
     pub selected_diff_index: usize,
     pub should_quit: bool,
     pub status: Option<StatusMessage>,
+    pub domain_list_state: ListState,
+    pub diff_list_state: ListState,
 }
 
 impl App {
@@ -99,6 +103,8 @@ impl App {
             selected_diff_index: 0,
             should_quit: false,
             status: None,
+            domain_list_state: ListState::default(),
+            diff_list_state: ListState::default(),
         }
     }
 
@@ -121,6 +127,8 @@ impl App {
         self.diff_result = None;
         self.selected_domain_index = 0;
         self.selected_diff_index = 0;
+        self.domain_list_state.select(None);
+        self.diff_list_state.select(None);
         self.status = Some(StatusMessage::info("Reset complete"));
     }
 
@@ -188,6 +196,8 @@ impl App {
 
             self.diff_result = Some(diff);
             self.screen = Screen::DiffView;
+            self.domain_list_state.select(Some(0));
+            self.diff_list_state.select(Some(0));
 
             if total == 0 {
                 self.status = Some(StatusMessage::warning("No changes detected"));
@@ -217,11 +227,16 @@ impl App {
                     if self.selected_domain_index > 0 {
                         self.selected_domain_index -= 1;
                         self.selected_diff_index = 0;
+                        self.domain_list_state
+                            .select(Some(self.selected_domain_index));
+                        self.diff_list_state.select(Some(0));
                     }
                 }
                 Focus::Diff => {
                     if self.selected_diff_index > 0 {
                         self.selected_diff_index -= 1;
+                        self.diff_list_state
+                            .select(Some(self.selected_diff_index));
                     }
                 }
             }
@@ -238,6 +253,9 @@ impl App {
                     if self.selected_domain_index < diff.domain_diffs.len().saturating_sub(1) {
                         self.selected_domain_index += 1;
                         self.selected_diff_index = 0;
+                        self.domain_list_state
+                            .select(Some(self.selected_domain_index));
+                        self.diff_list_state.select(Some(0));
                     }
                 }
                 Focus::Diff => {
@@ -245,6 +263,8 @@ impl App {
                         && self.selected_diff_index < domain_diff.changes.len().saturating_sub(1)
                     {
                         self.selected_diff_index += 1;
+                        self.diff_list_state
+                            .select(Some(self.selected_diff_index));
                     }
                 }
             }
