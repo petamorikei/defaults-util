@@ -37,8 +37,17 @@ pub fn handle_input(app: &mut App) -> io::Result<bool> {
                 app.move_down();
             }
 
+            // Esc: Quit
+            KeyCode::Esc => {
+                app.should_quit = true;
+            }
+
             // Toggle focus
-            KeyCode::Tab => {
+            KeyCode::Tab
+            | KeyCode::Char('h')
+            | KeyCode::Char('l')
+            | KeyCode::Left
+            | KeyCode::Right => {
                 app.toggle_focus();
             }
 
@@ -81,13 +90,18 @@ fn handle_copy(app: &mut App) {
             .stdin(std::process::Stdio::piped())
             .spawn()
         {
-            if let Some(stdin) = child.stdin.as_mut() {
+            if let Some(mut stdin) = child.stdin.take() {
                 use std::io::Write;
                 let _ = stdin.write_all(cmd.as_bytes());
             }
+            // stdin is dropped here, so pbcopy receives EOF
             if child.wait().is_ok() {
                 app.set_status(StatusMessage::success("✓ Command copied to clipboard"));
+            } else {
+                app.set_status(StatusMessage::warning("Failed to copy to clipboard"));
             }
+        } else {
+            app.set_status(StatusMessage::warning("Failed to copy to clipboard"));
         }
     }
 }
