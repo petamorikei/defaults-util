@@ -235,8 +235,7 @@ impl App {
                 Focus::Diff => {
                     if self.selected_diff_index > 0 {
                         self.selected_diff_index -= 1;
-                        self.diff_list_state
-                            .select(Some(self.selected_diff_index));
+                        self.diff_list_state.select(Some(self.selected_diff_index));
                     }
                 }
             }
@@ -263,8 +262,7 @@ impl App {
                         && self.selected_diff_index < domain_diff.changes.len().saturating_sub(1)
                     {
                         self.selected_diff_index += 1;
-                        self.diff_list_state
-                            .select(Some(self.selected_diff_index));
+                        self.diff_list_state.select(Some(self.selected_diff_index));
                     }
                 }
             }

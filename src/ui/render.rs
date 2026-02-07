@@ -343,10 +343,7 @@ fn render_diff_details(frame: &mut Frame, app: &mut App, area: Rect) {
 
                     let text = format_change(change);
                     ListItem::new(Line::from(vec![
-                        Span::styled(
-                            format!("{} ", prefix),
-                            Style::default().fg(color),
-                        ),
+                        Span::styled(format!("{} ", prefix), Style::default().fg(color)),
                         Span::styled(text, Style::default().fg(color)),
                     ]))
                 })

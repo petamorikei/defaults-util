@@ -87,7 +87,9 @@ fn generate_write_command(domain: &str, key: &str, value: &Value) -> String {
         Value::Uid(u) => {
             format!(
                 "defaults write \"{}\" \"{}\" -int {} # UID type stored as integer",
-                domain, key, u.get()
+                domain,
+                key,
+                u.get()
             )
         }
         _ => format!("# Unsupported type for key: {}", key),
@@ -101,9 +103,7 @@ fn format_array_elements(arr: &[Value]) -> String {
             Value::String(s) => Some(format!("-string \"{}\"", escape_string(s))),
             Value::Integer(i) => Some(format!("-int {}", i.as_signed().unwrap_or(0))),
             Value::Real(f) => Some(format!("-float {}", f)),
-            Value::Boolean(b) => {
-                Some(format!("-bool {}", if *b { "true" } else { "false" }))
-            }
+            Value::Boolean(b) => Some(format!("-bool {}", if *b { "true" } else { "false" })),
             _ => None, // Skip complex types
         })
         .collect::<Vec<_>>()
@@ -288,10 +288,7 @@ mod tests {
 
     #[test]
     fn test_format_array_mixed() {
-        let arr = vec![
-            Value::String("a".to_string()),
-            Value::Integer(1.into()),
-        ];
+        let arr = vec![Value::String("a".to_string()), Value::Integer(1.into())];
         assert_eq!(format_array_elements(&arr), r#"-string "a" -int 1"#);
     }
 

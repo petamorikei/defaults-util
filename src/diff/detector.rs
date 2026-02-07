@@ -246,10 +246,7 @@ mod tests {
     #[test]
     fn test_values_equal_bool() {
         assert!(values_equal(&Value::Boolean(true), &Value::Boolean(true)));
-        assert!(!values_equal(
-            &Value::Boolean(true),
-            &Value::Boolean(false)
-        ));
+        assert!(!values_equal(&Value::Boolean(true), &Value::Boolean(false)));
     }
 
     #[test]
